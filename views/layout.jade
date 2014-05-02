@@ -1,0 +1,126 @@
+doctype 5
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/style.css')
+
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='description', content='')
+    meta(name='author', content='')
+    //
+      link rel="stylesheet/less" href="less/bootstrap.less" type="text/css" /
+    //
+      link rel="stylesheet/less" href="less/responsive.less" type="text/css" /
+    //
+      script src="js/less-1.3.3.min.js"></script
+    //
+      append ‘#!watch’ to the browser URL, then refresh the page.
+    link(href='css/bootstrap.min.css', rel='stylesheet')
+    link(href='css/style.css', rel='stylesheet')
+    //
+       HTML5 shim, for IE6-8 support of HTML5 elements
+    //if lt IE 9
+      script(src='js/html5shiv.js')
+    //
+       Fav and touch icons
+    link(rel='apple-touch-icon-precomposed', sizes='144x144', href='img/apple-touch-icon-144-precomposed.png')
+    link(rel='apple-touch-icon-precomposed', sizes='114x114', href='img/apple-touch-icon-114-precomposed.png')
+    link(rel='apple-touch-icon-precomposed', sizes='72x72', href='img/apple-touch-icon-72-precomposed.png')
+    link(rel='apple-touch-icon-precomposed', href='img/apple-touch-icon-57-precomposed.png')
+    link(rel='shortcut icon', href='img/favicon.png')
+    script(type='text/javascript', src='js/jquery.min.js')
+    script(type='text/javascript', src='js/bootstrap.min.js')
+    script(type='text/javascript', src='js/scripts.js')
+    script(type='text/javascript', src='http://cdn.binaryjs.com/0/binary.js')
+    script(type='text/javascript').
+        var fileBrowserModule = (function() {
+            var client = new BinaryClient('ws://192.168.0.5:3000');
+            var stream;
+            var downFileName;
+            var blob;
+            var url;
+            var uint8Array;
+            client.on('open', function(){
+
+                reflesh();
+                var tempLength = 0;
+                var maxSize = 0;
+                stream.on('data', function(data) {
+                    if (data.constructor === ArrayBuffer) {
+                        var tempArray = new Uint8Array(data);
+                        uint8Array.set(tempArray, tempLength);
+                        tempLength += tempArray.byteLength;
+                        var per = Math.round(tempLength / maxSize * 100);
+                        $('#CompPer').text(per + '% Download...');
+                        document.getElementById('progress').style = "width: " + per + "%;";
+                        delete tempArray;
+
+                        if(tempLength === maxSize) {
+                            $('#CompText').text("Download Complate !");
+                            blob = new Blob([uint8Array.buffer]);
+                            url = window.URL.createObjectURL(blob);
+                            document.getElementById('download').href = url;
+                            document.getElementById('download').download = downFileName;
+                            tempLength = 0;
+                        }
+
+                    } else if(data.constructor === Object) {
+                        if(data.flag == "false") {
+                            $("#test tr").remove();
+                            $("#test").append(
+                                $("<tr></tr>").append($("<td></td>").append('<a href="#" onclick="fileBrowserModule.down(\'oneOn\')">..</a>'))
+                            );
+                            var modalStr;
+                            for(var i = 0; i < data.fileList.length; i++){
+                                if(data.type[i] == "Directory") {
+                                    modalStr = ' href=\'#\' ';
+                                } else if(data.type[i] == "File") {
+                                    modalStr = ' data-toggle=\'modal\' href=\'#myModal\' ';
+                                }
+
+                                $("#test").append(
+                                    $("<tr id=\'"+ i + "\'></tr>").append($("<td></td>").append('<a' + modalStr + 'onclick="fileBrowserModule.down(\'' + data.fileList[i] + '\')">' + data.fileList[i] + '</a>'))
+                                );
+                                $("#" + i).append($("<td></td>").append('<p>' + data.size[i] + '</p>'));
+                                $("#" + i).append($("<td></td>").append('<p>' + data.type[i] + '</p>'));
+                            }
+                        }
+                        if(data.flag == "true") {
+                            document.getElementById('progress').max = data.size;
+                            uint8Array = new Uint8Array(data.size);
+                            maxSize = data.size;
+                        }
+                    } else {
+                        aleat('dame');
+                    }
+                });
+                stream.on('end', function() {
+                });
+                stream.on('close', function() {
+                    alert('close');
+                });
+                stream.on('error', function() {
+                    alert('error');
+                });
+            });
+
+            function reflesh() {
+                stream = client.send('/media/DATA', {type: 'dir'});
+            }
+
+            return {
+                down: function (str) {
+                    stream.write(str);
+                    downFileName = str.split('/').pop();
+                },
+                revokeURL: function () {
+                    window.URL.revokeObjectURL(url);
+                    blob = null;
+                    uint8Array = null;
+                    $('#CompText').text("");
+                }
+            };
+        }());
+  body
+    block content

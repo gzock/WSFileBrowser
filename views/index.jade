@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  div(id="connectId")
+  h1= title
+  p Welcome to #{title}
+  div(id="messages")
+  br
+  div(id="myModal" class="modal hide fade" style="display: none;")
+   div(class="modal-header")
+   div(class="modal-body")
+    div(id='CompPer') 0% Download...
+    div(id='CompText')
+    div(class="progress progress-striped active")
+     div(id="progress" class="bar" style="width: 0%;")
+   div(class="modal-footer")
+    a(href='#' class="btn btn-primary" id="download" download="test.png") Save
+    a(href="#" class="btn" data-dismiss="modal" onclick="fileBrowserModule.revokeURL()") Close
+
+  table(id="test" class="table table-striped table-bordered table-condensed")
